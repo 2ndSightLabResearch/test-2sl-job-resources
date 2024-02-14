@@ -1,0 +1,90 @@
+# https://github.com/tradichel/2sl-jobexecframework
+# resources/ec2/../VPCEndpoint.yaml
+# author: @teriradichel @2ndsightlab
+# description: VPC Endpoint template
+##############################################################
+Parameters:
+  cfparamService:
+    Type: String
+  cfparamEndpointService:
+    Type: String
+  cfparamVPCName:
+    Type: String
+  cfparamSubnetName:
+    Type: String
+  cfparamSecurityGroupName:
+    Type: String
+  cfparamReadPrincipals:
+    Type: CommaDelimitedList
+  cfparamReadActions:
+    Type: CommaDelimitedList
+  cfparamReadResources:
+    Type: CommaDelimitedList
+  cfparamReadAllowDeny:
+    Type: String
+    Default: Deny
+  cfparamWritePrincipals:
+    Type: CommaDelimitedList
+    Default: "None"
+  cfparamWriteActions:
+    Type: CommaDelimitedList
+    Default: "None"
+  cfparamWriteResources:
+    Type: CommaDelimitedList
+    Default: "None"
+  cfparamWriteAllowDeny:
+    Type: String
+    Default: Deny
+    AllowedValues:
+      - Allow
+      - Deny
+
+Conditions:
+  NoWrite: !Equals
+      - !Ref cfparamWriteAllowDeny
+      - "Deny"
+
+Resources:
+  VPCE:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: !Ref cfparamReadAllowDeny
+            Principal:
+              AWS: !Ref cfparamReadPrincipals
+            Action: !Ref cfparamReadActions
+            Resource: !Ref cfparamReadResources
+          - !If
+            - NoWrite
+            - !Ref AWS::NoValue
+            - 
+              Effect: !Ref cfparamWriteAllowDeny
+              Principal: 
+                AWS: 
+                  !Ref cfparamWritePrincipals
+              Action:  !Ref cfparamWriteActions
+              Resource: !Ref cfparamWriteResources
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: True
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.${cfparamEndpointService}'
+      VpcId:
+        Fn::ImportValue: 
+          !Sub "${cfparamVPCName}"
+      SubnetIds: 
+        - Fn::ImportValue:
+            !Sub "${cfparamSubnetName}"
+      SecurityGroupIds:
+        - Fn::ImportValue: 
+            !Sub "${cfparamSecurityGroupName}"
+
+Outputs:
+  VPCEOutput:
+    Value: !Ref VPCE
+    Export:
+      Name: !Sub VPCE-${cfparamService}
+
+
+
+

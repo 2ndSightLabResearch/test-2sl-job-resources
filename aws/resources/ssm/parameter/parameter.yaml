@@ -1,0 +1,65 @@
+Parameters:
+  cfparamName:
+    Type: String
+  cfparamValue:
+    Type: String
+  cfparamDescription:
+    Type: String
+    Default: ""
+  cfparamDataType:
+    Type: String
+    Default: "text"
+    AllowedValues:
+      - "text"
+      - "aws:ec2:image"
+  cfparamType:
+    Type: String
+    Default: "String"
+    AllowedValues:
+      - "String"
+      - "StringList"
+      #Does not support SecureString at time of writing
+      #awswishlist
+  cfparamTier:
+    Type: String
+    Default: "Standard"
+    AllowedValues:
+      - "Standard"
+    #  - "Advanced"
+    #  - "Intelligent-Tiering"
+    #Standard parameters, Type: SecureString: < 4096 bytes. Encrypted/decrypted directly w/KMS key you specify.
+    #Advanced parameters, Type: SecureString: Envelope encryption w/KMS key you specify 
+    #No point to advanced encryption options when we can't use the SecureString type so Standard is the only
+    #option and is cheaper
+  cfparamAllowedPattern:
+    Type: String
+    Default: '[a-z0-9]{1,255}$'
+  #PoliciesParam:
+  #  Type: String
+  #  Default: ""
+  #TagsParam:
+  #  Type: String
+  #  Default: ""
+
+Resources:
+  Parameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Ref cfparamName
+      cfparamDataType: !Ref DataType
+      Value: !Ref cfparamValue
+      Type: !Ref cfparamType
+        #CloudFormation does not support SecureString for Parameter Store
+        #which is why parameters are not used for sensitived data
+        #in this framework
+      AllowedPattern: !Ref AllowedPatternParam
+      #Policies: !Ref PoliciesParam
+      Tier: !Ref TierParam
+      #Tags: !Ref TagsParam
+
+Outputs:
+  ParameterOutput:
+    Value: !Ref Parameter
+    Export:
+     Name: !Sub ${cfparamName}                                           
+

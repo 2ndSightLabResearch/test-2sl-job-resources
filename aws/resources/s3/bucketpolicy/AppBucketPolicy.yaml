@@ -1,0 +1,74 @@
+
+Parameters:
+  cfparamBucketNameSuffix:
+    Type: String
+  cfparamAppName:
+    Type: String
+  cfparamService:
+    Type: String
+  cfparamReadOrWrite:
+    Type: String
+    AllowedValues:
+      - "Read"
+      - "Write"
+
+Resources:
+ AppBucketPolicy:
+  Type: AWS::S3::BucketPolicy
+  Properties:
+    Bucket:
+      !Join
+        - ""
+        - - !Sub "{{resolve:ssm:Environment}}"
+          - "-"
+          - !Sub "{{resolve:ssm:EnvironmentOrg}}"
+          - "-"
+          - !Ref cfparamAppName
+    PolicyDocument:
+      Version: 2012-10-17
+      Statement:
+        - Effect: Allow
+          Action:
+            - 's3:PutObject'
+          Resource:
+            !Join
+              - ""
+              - - "arn:aws:s3:::"
+                - !Sub "{{resolve:ssm:Environment}}"
+                - "-"
+                - !Sub "{{resolve:ssm:EnvironmentOrg}}"
+                - "-"
+                - !Ref cfparamBucketNameSuffix
+                - "/*"
+          Principal: 
+            AWS: 
+              !Join
+                - ""
+                - - "arn:aws:iam::"
+                  - !Sub "{{resolve:ssm:EnvironmentAdminAccount}}"
+                  - ":role/"
+                  - !Ref cfparamAppName
+                  - !Sub cfparamService
+                  - "Role" 
+        - Effect: Allow
+          Action:
+            - 's3:ListBucket'
+          Resource: 
+            !Join
+              - ""
+              - - "arn:aws:s3:::"
+                - !Sub "{{resolve:ssm:Environment}}"
+                - "-"
+                - !Sub "{{resolve:ssm:EnvironmentOrg}}"
+                - "-"
+                - !Ref cfparamBucketNameSuffix
+          Principal: 
+            AWS: 
+              !Join
+                - ""
+                - - "arn:aws:iam::"
+                  - !Sub "{{resolve:ssm:EnvironmentAdminAccount}}"
+                  - ":role/"
+                  - !Ref cfparamAppName
+                  - !Sub cfparamService
+                  - "Role"

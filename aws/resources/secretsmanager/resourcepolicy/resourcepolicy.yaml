@@ -1,0 +1,32 @@
+# https://github.com/tradichel/2sl-jobexecframework
+# AppSec/stacks/Secret/cfn/SecretResourcePolicy.yaml
+# author: @teriradichel @2ndsightlab
+##############################################################
+Parameters:
+  cfparamEnv:
+    Type: String
+  cfparamSecretID:
+    Type: String
+  cfparamReadOnlyRoles:
+    Type: CommaDelimitedList
+Resources:
+ SecretPolicy:
+  Type: "AWS::SecretsManager::ResourcePolicy"
+  Properties:
+    BlockPublicPolicy: true
+    SecretId: !Ref cfparamSecretID
+    ResourcePolicy:
+      Id: SecretReourcePolicy
+      Version: 2012-10-17
+      Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Sub arn:aws:iam::${AWS::AccountId}:user/${cfparamEnv}Admin
+          Action: "*"
+          Resource: "*"
+        - Effect: Allow
+          Action: "secretsmanager:GetSecretValue"
+          Resource: "*"
+          Principal: 
+              AWS: !Ref cfparamReadOnlyRoles
+

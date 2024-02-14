@@ -1,0 +1,13 @@
+source shared/functions.sh
+source shared/validate.sh
+
+get_id(){
+	local name="$1"
+
+  validate_set "${FUNCNAME[0]}" "name" "$name"
+
+	echo "get_id not implemented for {{resource_type}}"
+	exit 1
+}
+
+
