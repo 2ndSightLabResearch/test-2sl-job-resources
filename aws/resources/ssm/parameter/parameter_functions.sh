@@ -5,17 +5,14 @@
 # description: Functions for AWS::SSM::Parameter
 # and CLI scripts to deploy secure string parameters
 ##############################################################
-
-#the script that calls this must include the following files:
-#source shared/functions.sh
-#source shared/validate.sh
+source shared/functions.sh
 
 ssm_parameter_exists(){
 	ssm_name="$1"
  
   validate_set "${FUNCNAME[0]}" "ssm_name" "$ssm_name"
 
-	v=$(aws ssm describe-parameters --filters "Key=Name,Values=$ssm_name" --profile $profile)	
+	v=$(aws ssm describe-parameters --filters "Key=Name,Values=$ssm_name" --profile $PROFILE)	
 	t=$(echo $v | jq '.Parameters | length')
 	if [[ $t == 0 ]]; then
 		echo "false"
@@ -46,7 +43,7 @@ get_ssm_parameter_value(){
 	v=""
 	exists=$(ssm_parameter_exists $ssm_name)
 	if [ "$exists" == "true" ]; then
-  	v=$(aws ssm get-parameter --name $ssm_name --with-decryption --query "Parameter.Value" --output text --profile $profile)
+  	v=$(aws ssm get-parameter --name $ssm_name --with-decryption --query "Parameter.Value" --output text --profile $PROFILE)
   fi
 	echo $v
 }
@@ -74,22 +71,21 @@ set_ssm_parameter_value(){
 
 	if [ "$kmskeyid" != "" ]; then
 		echo "aws ssm put-parameter --name $ssm_name --key-id $kmskeyid \
-    	--value $ssm_value --tier $tier --type $parmtype --profile $profile"
+    	--value $ssm_value --tier $tier --type $parmtype --profile $PROFILE"
   	aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value $ssm_value \
-			 --tier $tier --type $parmtype --profile $profile
+			 --tier $tier --type $parmtype --profile $PROFILE
 	else
     echo "aws ssm put-parameter --name $ssm_name \
-      --value $ssm_value --tier $tier --type $parmtype --profile $profile"
+      --value $ssm_value --tier $tier --type $parmtype --profile $PROFILE"
     aws ssm put-parameter --name $ssm_name --overwrite --value $ssm_value \
-       --tier $tier --type $parmtype --profile $profile
+       --tier $tier --type $parmtype --profile $PROFILE
 	fi
 }
 
 set_ssm_parameter_job_config(){
   ssm_name="$1"
-	config_path="$2"
-  kmskeyid="$3"
-  tier="$4"
+  kmskeyid="$2"
+  tier="$2"
 
   #secure string doesn't work with 
   #cloudformation at the time I wrote
@@ -103,21 +99,18 @@ set_ssm_parameter_job_config(){
   func=${FUNCNAME[0]}
   validate_set $func "ssm_name" "$ssm_name"
 
-	if [ "$PROFILE" != "" ]; then useprofile=" --profile $PROFILE"; fi
-
-	pwd
-	ls
+	if [ "$PROFILE" != "" ]; then usePROFILE=" --profile $PROFILE"; fi
 
   if [ "$kmskeyid" != "" ]; then
-    echo "aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value file://$config_path$ssm_name \
-       --tier $tier --type $parmtype $useprofile"
-    aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value file://$config_path$ssm_name \
-       --tier $tier --type $parmtype $useprofile
+    echo "aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value file://.$ssm_name \
+       --tier $tier --type $parmtype $usePROFILE"
+    aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value file://.$ssm_name \
+       --tier $tier --type $parmtype $usePROFILE
   else
-    echo "aws ssm put-parameter --name $ssm_name --overwrite --value file://$config_path$ssm_name \
-       --tier $tier --type $parmtype $useprofile"
-    aws ssm put-parameter --name $ssm_name --overwrite --value file://$config_path$ssm_name \
-       --tier $tier --type $parmtype $useprofile
+    echo "aws ssm put-parameter --name $ssm_name --overwrite --value file://.$ssm_name \
+       --tier $tier --type $parmtype $usePROFILE"
+    aws ssm put-parameter --name $ssm_name --overwrite --value file://.$ssm_name \
+       --tier $tier --type $parmtype $usePROFILE
   fi
 }
 
