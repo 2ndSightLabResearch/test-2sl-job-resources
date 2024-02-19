@@ -5,7 +5,9 @@
 # description: Functions for AWS::SSM::Parameter
 # and CLI scripts to deploy secure string parameters
 ##############################################################
-source shared/functions.sh
+base=$(ls | grep '2sl-job-resources')
+
+source $base/aws/shared/functions.sh
 
 ssm_parameter_exists(){
 	ssm_name="$1"
@@ -51,14 +53,14 @@ get_ssm_parameter_value(){
 set_ssm_parameter_value(){
   ssm_name="$1"
   ssm_value="$2"
-	kmskeyid="$3"
-	tier="$4"
+  kmskeyid="$3"
+  tier="$4"
 
-	#secure string doesn't work with 
-	#cloudformation at the time I wrote
-	#these scripts - default to standard,
-	#secure string which is encrypted with 
-	#the AWS managed KMS key
+  #secure string doesn't work with 
+  #cloudformation at the time I wrote
+  #these scripts - default to standard,
+  #secure string which is encrypted with 
+  #the AWS managed KMS key
 	
   if [ "$tier" == "" ]; then tier="Standard"; fi
  	parmtype='SecureString'
@@ -67,31 +69,34 @@ set_ssm_parameter_value(){
   validate_set $func "ssm_name" $ssm_name
   validate_set $func "ssm_value" $ssm_value
 
-	ssm_name=$ssm_name
+  ssm_name=$ssm_name
 
-	if [ "$kmskeyid" != "" ]; then
-		echo "aws ssm put-parameter --name $ssm_name --key-id $kmskeyid \
-    	--value $ssm_value --tier $tier --type $parmtype --profile $PROFILE"
-  	aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value $ssm_value \
-			 --tier $tier --type $parmtype --profile $PROFILE
-	else
+  if [ "$kmskeyid" != "" ]; then
+    echo "aws ssm put-parameter --name $ssm_name --key-id $kmskeyid \
+     --value $ssm_value --tier $tier --type $parmtype --profile $PROFILE"
+  
+    aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value $ssm_value \
+      --tier $tier --type $parmtype --profile $PROFILE
+  else
     echo "aws ssm put-parameter --name $ssm_name \
       --value $ssm_value --tier $tier --type $parmtype --profile $PROFILE"
     aws ssm put-parameter --name $ssm_name --overwrite --value $ssm_value \
        --tier $tier --type $parmtype --profile $PROFILE
-	fi
+  fi
 }
 
 set_ssm_parameter_job_config(){
   ssm_name="$1"
   kmskeyid="$2"
-  tier="$2"
+  tier="$3"
 
   #secure string doesn't work with 
   #cloudformation at the time I wrote
   #these scripts - default to standard,
   #secure string which is encrypted with 
   #the AWS managed KMS key
+  echo "Deploy job config: $ssm_name
+ echo "Deploy job config: $ssm_name""
 
   if [ "$tier" == "" ]; then tier="Standard"; fi
   parmtype='SecureString'
@@ -102,14 +107,14 @@ set_ssm_parameter_job_config(){
 	if [ "$PROFILE" != "" ]; then usePROFILE=" --profile $PROFILE"; fi
 
   if [ "$kmskeyid" != "" ]; then
-    echo "aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value file://.$ssm_name \
+    echo "aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value file://$ssm_name \
        --tier $tier --type $parmtype $usePROFILE"
-    aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value file://.$ssm_name \
+    aws ssm put-parameter --name $ssm_name --overwrite --key-id $kmskeyid --value file:/$ssm_name \
        --tier $tier --type $parmtype $usePROFILE
   else
-    echo "aws ssm put-parameter --name $ssm_name --overwrite --value file://.$ssm_name \
+    echo "aws ssm put-parameter --name $ssm_name --overwrite --value file://$ssm_name \
        --tier $tier --type $parmtype $usePROFILE"
-    aws ssm put-parameter --name $ssm_name --overwrite --value file://.$ssm_name \
+    aws ssm put-parameter --name $ssm_name --overwrite --value file:/$ssm_name \
        --tier $tier --type $parmtype $usePROFILE
   fi
 }
